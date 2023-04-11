@@ -2,6 +2,10 @@ import { MenuItem } from './entities/menu-item.entity';
 import { Repository } from "typeorm";
 import App from "../../app";
 
+interface MenuItemWithChildren extends MenuItem {
+    children?: MenuItem[],
+}
+
 export class MenuItemsService {
 
   private menuItemRepository: Repository<MenuItem>;
@@ -86,6 +90,35 @@ export class MenuItemsService {
   */
 
   async getMenuItems() {
-    throw new Error('TODO in task 3');
+    const menu = await this.menuItemRepository.find({
+        order: {
+            id: 'ASC',
+        }
+    });
+
+    return this.organizeMenu(menu);
+  }
+
+  organizeMenu(menu: MenuItem[]) {
+    const menuMap = new Map<number, MenuItemWithChildren>();
+    menu.forEach(item => menuMap.set(item.id, item));
+  
+    const nestedMenu: MenuItemWithChildren[] = [];
+  
+    menu.forEach(menuItem => {
+      if (!menuItem.parentId) {
+        nestedMenu.push(menuItem);
+      } else {
+        const parentMenuItem = menuMap.get(menuItem.parentId);
+        if (parentMenuItem) {
+          if (!parentMenuItem.children) {
+            parentMenuItem.children = [];
+          }
+          parentMenuItem.children.push(menuItem);
+        }
+      }
+    });
+
+    return nestedMenu;
   }
 }

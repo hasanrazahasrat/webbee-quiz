@@ -1,6 +1,7 @@
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { Event } from './entities/event.entity';
 import App from "../../app";
+import { format } from 'date-fns';
 
 
 export class EventsService {
@@ -92,7 +93,14 @@ export class EventsService {
      */
 
   async getEventsWithWorkshops() {
-    throw new Error('TODO task 1');
+    return this.eventRepository.find({
+      relations: ['workshops'],
+      order: {
+        workshops: {
+          id: 'ASC',
+        }
+      }
+    });
   }
 
   /* TODO: complete getFutureEventWithWorkshops so that it returns events with workshops, that have not yet started
@@ -162,6 +170,20 @@ export class EventsService {
     ```
      */
   async getFutureEventWithWorkshops() {
-    throw new Error('TODO task 2');
+    const currentDate = format(new Date(), 'yyyy-MM-dd hh:MM:SS');
+
+    return this.eventRepository.find({
+      relations: ['workshops'],
+      where: {
+        workshops: {
+          start: MoreThan(currentDate),
+        }
+      },
+      order: {
+        workshops: {
+          id: 'ASC',
+        }
+      }
+    })
   }
 }

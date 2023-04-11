@@ -1,4 +1,5 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Event } from './event.entity';
 
 @Entity()
 export class Workshop {
@@ -13,6 +14,9 @@ export class Workshop {
 
     @Column({ type: 'integer', default: null })
     eventId: number;
+
+    @ManyToOne(() => Event, (event) => event.id)
+    event: Event;
 
     @Column()
     name: string;
