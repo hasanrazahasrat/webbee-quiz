@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
 export class CinemaSystem1663877813247 implements MigrationInterface {
   /**
@@ -31,8 +31,225 @@ export class CinemaSystem1663877813247 implements MigrationInterface {
    * As a cinema owner I dont want to configure the seating for every show
    */
   public async up(queryRunner: QueryRunner): Promise<void> {
-    throw new Error('TODO: implement migration in task 4');
+    await this.createMovieCinemaTables(queryRunner);
+    await this.createSeatsTable(queryRunner);
+    await this.createMovieTicketsTables(queryRunner);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {}
+
+  protected async createMovieCinemaTables(queryRunner: QueryRunner) {
+    await queryRunner.createTable(
+      new Table({
+        name: 'movies',
+        columns: [
+          {
+            name: 'id',
+            isPrimary: true,
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
+          { name: 'name', type: 'varchar' },
+          { name: 'url', type: 'varchar' },
+          {
+            name: 'createdAt',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
+        ],
+      }),
+    );
+
+    // Create cinemas table
+    await queryRunner.createTable(
+      new Table({
+        name: 'cinemas',
+        columns: [
+          {
+            name: 'id',
+            isPrimary: true,
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
+          {
+            name: 'name',
+            type: 'varchar'
+          },
+          {
+            name: 'createdAt',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
+        ],
+      }),
+    );
+
+    // Create bridge table
+    await queryRunner.createTable(
+      new Table({
+        name: 'movie_cinemas',
+        columns: [
+          {
+            name: 'movie_id',
+            type: 'integer'
+          },
+          {
+            name: 'cinema_id',
+            type: 'integer'
+          },
+          {
+            name: 'start_time',
+            type: 'datetime'
+          },
+          {
+            name: 'end_time',
+            type: 'datetime'
+          },
+        ],
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'movie_cinemas',
+      new TableForeignKey({
+        columnNames: ['movie_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'movies',
+        onDelete: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'movie_cinemas',
+      new TableForeignKey({
+        columnNames: ['cinema_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'cinemas',
+        onDelete: 'CASCADE',
+      }),
+    );
+  }
+
+  protected async createSeatsTable(queryRunner: QueryRunner) {
+    await queryRunner.createTable(
+      new Table({
+        name: 'seats',
+        columns: [
+          {
+            name: 'id',
+            isPrimary: true,
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
+          { name: 'cinema_id', type: 'integer' },
+          {
+            name: 'createdAt',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
+        ],
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'seats',   
+      new TableForeignKey({
+        columnNames: ['cinema_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'cinemas',
+        onDelete: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createTable(
+      new Table({
+        name: 'tickets_types',
+        columns: [
+          {
+            name: 'id',
+            isPrimary: true,
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
+          { name: 'name', type: 'varchar' },
+          { name: 'amount_percentage', type: 'integer' },
+          {
+            name: 'createdAt',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
+        ],
+      }),
+    );
+  }
+
+  protected async createMovieTicketsTables(queryRunner: QueryRunner) {
+    await queryRunner.createTable(
+      new Table({
+        name: 'movie_tickets',
+        columns: [
+          {
+            name: 'id',
+            isPrimary: true,
+            type: 'integer',
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
+          { name: 'movie_id', type: 'integer' },
+          { name: 'cinema_id', type: 'integer' },
+          { name: 'seat_id', type: 'integer'},
+          { name: 'ticket_type_id', type: 'integer'},
+          {
+            name: 'createdAt',
+            type: 'timestamp',
+            default: 'CURRENT_TIMESTAMP',
+          },
+        ],
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'movie_tickets',   
+      new TableForeignKey({
+        columnNames: ['movie_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'movies',
+        onDelete: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'movie_tickets',
+      new TableForeignKey({
+        columnNames: ['cinema_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'cinemas',
+        onDelete: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'movie_tickets',
+      new TableForeignKey({
+        columnNames: ['seat_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'seats',
+        onDelete: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'movie_tickets',
+      new TableForeignKey({
+        columnNames: ['ticket_type_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'tickets_types',
+        onDelete: 'CASCADE',
+      }),
+    );
+  }
 }
